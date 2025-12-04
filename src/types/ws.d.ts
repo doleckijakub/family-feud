@@ -1,8 +1,8 @@
-import 'ws';
+import "ws";
 
-declare module 'ws' {
+declare module "ws" {
   interface WebSocket {
     gameId?: string;
-    role?: 'host' | 'game';
+    role?: "host" | "game";
   }
 }
