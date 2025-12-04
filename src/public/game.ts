@@ -1,35 +1,75 @@
-interface GameState {
-  answers: string[];
-  revealed: boolean[];
-  xCount: number;
-  scores: Record<string, number>;
+import { t } from './i18n.js';
+
+interface AnswerState {
+  text: string;
+  points: number;
+  revealed: boolean;
+  awardedTo?: "A" | "B" | null;
 }
 
-const gameId = window.location.pathname.split("/")[1];
+interface GameState {
+  questionIndex: number;
+  question: string;
+  answers: AnswerState[];
+  questionRevealed: boolean;
+  strikesA: number;
+  strikesB: number;
+  scoreA: number;
+  scoreB: number;
+}
+
+const gameId = window.location.pathname.split("/")[1] ?? "000";
 const ws = new WebSocket(`ws://${location.host}/ws/${gameId}/game`);
 
-const answersContainer = document.createElement("div");
-document.body.appendChild(answersContainer);
+const questionTop = document.getElementById("questionTop") as HTMLElement;
+const answersCenter = document.getElementById("answersCenter") as HTMLElement;
+const scoreAEl = document.getElementById("scoreA") as HTMLElement;
+const scoreBEl = document.getElementById("scoreB") as HTMLElement;
+const xsA = document.getElementById("xsA") as HTMLElement;
+const xsB = document.getElementById("xsB") as HTMLElement;
 
-const xContainer = document.createElement("div");
-document.body.appendChild(xContainer);
+(document.getElementById("title") as HTMLElement).textContent = t("title");
+(document.getElementById("teamA") as HTMLElement).textContent = t("teamA");
+(document.getElementById("teamB") as HTMLElement).textContent = t("teamB");
 
-const scoreContainer = document.createElement("div");
-document.body.appendChild(scoreContainer);
+function renderState(state: GameState) {
+  questionTop.textContent = state.questionRevealed ? state.question : "???";
+  scoreAEl.textContent = String(state.scoreA);
+  scoreBEl.textContent = String(state.scoreB);
+
+  xsA.innerHTML = "";
+  for (let i = 0; i < Math.min(3, state.strikesA); i++) {
+    const d = document.createElement("div"); d.className = "x"; d.textContent = "X"; xsA.appendChild(d);
+  }
+  xsB.innerHTML = "";
+  for (let i = 0; i < Math.min(3, state.strikesB); i++) {
+    const d = document.createElement("div"); d.className = "x"; d.textContent = "X"; xsB.appendChild(d);
+  }
+
+  answersCenter.innerHTML = "";
+  state.answers.forEach((a, i) => {
+    const row = document.createElement("div");
+    row.className = "answerRow";
+    if (!a.revealed) {
+      row.className = "answerRow answerHidden";
+      row.textContent = "???";
+    } else {
+      const left = document.createElement("div");
+      left.textContent = a.text;
+      const right = document.createElement("div");
+      right.textContent = String(a.points);
+      row.appendChild(left);
+      row.appendChild(right);
+    }
+    answersCenter.appendChild(row);
+  });
+}
 
 ws.onmessage = (ev: MessageEvent) => {
-  const msg: { type: string; state: GameState } = JSON.parse(ev.data);
-  const state = msg.state;
-
-  answersContainer.innerHTML = "";
-  state.answers.forEach((ans: string, i: number) => {
-    const el = document.createElement("div");
-    el.textContent = state.revealed[i] ? ans : "???";
-    answersContainer.appendChild(el);
-  });
-
-  xContainer.textContent = "X's: " + state.xCount;
-  scoreContainer.textContent = "Score: " + state.scores.host;
+  const msg = JSON.parse(ev.data) as { type: string; state: GameState };
+  if (msg.type === "init" || msg.type === "update") {
+    renderState(msg.state);
+  }
 };
 
-export {};
+ws.onopen = () => console.log("game ws open");

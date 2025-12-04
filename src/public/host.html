@@ -1,9 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Family Feud - Host</title>
+  <meta charset="utf-8" />
+  <title>Family Feud - Host</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b2b4a;
+      --panel:#082038;
+      --accent:#ffd166;
+      --accent-2:#ffb703;
+      --tile:#0d5c7d;
+      --tile-2:#1b8fa3;
+      --text:#ffffff;
+      --muted: #cfe8f2;
+      --red:#ff4655;
+      --glass: rgba(255,255,255,0.04);
+    }
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,var(--bg), #052036 80%); color:var(--text);}
+    .container{max-width:1100px;margin:18px auto;padding:20px;background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent); border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    header{display:flex;align-items:center;gap:16px;}
+    header h1{margin:0;font-size:28px;letter-spacing:1px;}
+    .topbar{display:flex;gap:12px;align-items:center;margin-top:12px;}
+    .btn{background:var(--accent);color:#112; border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 6px 10px rgba(0,0,0,0.35);}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;}
+    .layout{display:grid;grid-template-columns: 320px 1fr 320px; gap:16px;margin-top:18px;align-items:start;}
+    .panel{background:var(--panel);padding:14px;border-radius:10px;min-height:200px;}
+    .questionBox{background:linear-gradient(90deg,var(--tile),var(--tile-2));padding:16px;border-radius:10px;color:var(--text);font-size:18px;font-weight:700; text-align:center;}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .answersList{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+    .answerRow{display:flex;align-items:center;gap:8px;padding:10px;background:var(--glass);border-radius:8px;border:1px solid rgba(255,255,255,0.03);}
+    .answerText{flex:1;font-weight:600;}
+    .small{font-size:13px;color:var(--muted);}
+    .scoreBox{background:linear-gradient(180deg,#06304a,#041a2a);padding:12px;border-radius:8px;text-align:center;}
+    .scoreLarge{font-size:28px;font-weight:800;color:var(--accent);}
+    .strikes{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:8px;}
+    .x{background:var(--red);color:#fff;padding:6px 10px;border-radius:6px;font-weight:700;box-shadow:0 6px 10px rgba(0,0,0,0.35);}
+    .answerButtons{display:flex;gap:6px;}
+    footer{margin-top:18px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;}
+    .muted{color:var(--muted);}
+    @media (max-width:1000px){ .layout{grid-template-columns:1fr; } }
+  </style>
 </head>
 <body>
-    <script type="module" src="/host.js"></script>
+  <div class="container">
+    <header>
+      <h1 id="title"></h1>
+    </header>
+
+    <div class="topbar">
+      <button id="revealQuestion" class="btn"></button>
+      <button id="revealAll" class="btn"></button>
+      <button id="nextQuestion" class="btn"></button>
+    </div>
+
+    <div class="layout">
+      <div class="panel">
+        <div class="questionBox" id="questionBox"></div>
+        <div class="controls">
+          <div class="scoreBox" style="flex:1;">
+            <div class="small" id="teamA"></div>
+            <div class="scoreLarge" id="scoreA">0</div>
+            <div class="small strikes"></div>
+            <div class="strikes" id="strikesA"></div>
+            <div style="margin-top:8px;"><button class="btn-ghost" id="strikeA"></button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin:0 0 8px 0;color:var(--muted)">Answers</h3>
+        <div class="answersList" id="answersList"></div>
+      </div>
+
+      <div class="panel">
+        <div class="scoreBox">
+          <div class="small" id="teamB"></div>
+          <div class="scoreLarge" id="scoreB">0</div>
+          <div class="small strikes"></div>
+          <div class="strikes" id="strikesB"></div>
+          <div style="margin-top:8px;"><button class="btn-ghost" id="strikeB"></button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/host.js"></script>
 </body>
 </html>

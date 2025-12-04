@@ -1,0 +1,13 @@
+QUESTION: Name a fruit
+Apple = 30
+Banana = 20
+Orange = 15
+Pear = 10
+---
+
+QUESTION: Name a pet
+Dog = 40
+Cat = 30
+Fish = 10
+Hampter = 5
+---
