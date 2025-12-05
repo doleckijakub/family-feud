@@ -2,7 +2,7 @@ import { t } from './i18n.ts';
 import type { Lang, GameState } from '../types.ts';
 
 const gameId = window.location.pathname.split("/")[1] ?? "000";
-const ws = new WebSocket(`ws://${location.host}/ws/${gameId}/host`);
+const ws = new WebSocket(`${location.protocol == "https:" ? "wss" : "ws"}://${location.host}/ws/${gameId}/host`);
 
 const questionBox = document.getElementById("questionBox") as HTMLElement;
 const answersList = document.getElementById("answersList") as HTMLElement;
@@ -48,7 +48,8 @@ inputNameA.oninput = () => ws.send(JSON.stringify({ type: "renameA", newName: in
 inputNameB.oninput = () => ws.send(JSON.stringify({ type: "renameB", newName: inputNameB.value }));
 
 function renderAnswers(state: GameState) {
-  let _ = (k: string) => t(k, state.lang);
+  const _ = (k: string) => t(k, state.lang);
+  const round = state.rounds[state.questionIndex];
 
   (document.getElementById("title") as HTMLElement).textContent = _("title");
   btnRevealQuestion.textContent = _("revealQuestion");
@@ -70,12 +71,13 @@ function renderAnswers(state: GameState) {
   (document.getElementById("questionIndex") as HTMLElement).textContent = (state.questionIndex + 1).toString();
   (document.getElementById("questionCount") as HTMLElement).textContent = state.questionCount.toString();
 
-  btnRevealQuestion.style = `border: 3px solid ${state.questionRevealed ? 'red' : 'green'};`;
-  btnPrevQuestion.style   = `border: 3px solid ${state.questionIndex === 0 ? 'red' : 'green'};`;
-  btnNextQuestion.style   = `border: 3px solid ${state.questionIndex >= state.questionCount ? 'red' : 'green'};`;
+  btnRevealQuestion.style = `border: 5px solid ${round.questionRevealed ? 'red' : 'green'};`;
+  btnRevealAll.style      = `border: 5px solid ${!round.answers.filter(a => !a.revealed).length ? 'red' : 'green'};`;
+  btnPrevQuestion.style   = `border: 5px solid ${state.questionIndex === 0 ? 'red' : 'green'};`;
+  btnNextQuestion.style   = `border: 5px solid ${(state.questionIndex + 1) >= state.questionCount ? 'red' : 'green'};`;
 
   answersList.innerHTML = "";
-  state.answers.forEach((ans, i) => {
+  round.answers.forEach((ans, i) => {
     const row = document.createElement("div");
     row.className = "answerRow";
 
@@ -85,34 +87,25 @@ function renderAnswers(state: GameState) {
       ? `${ans.text} - ${ans.points} ${_("pts")}`
       : `${ans.text} - ${ans.points} ${_("pts")}`;
 
-    const small = document.createElement("div");
-    small.className = "small";
-    small.textContent = ans.awardedTo ? `${_("awarded")}: ${ans.awardedTo}` : "";
-
     const btns = document.createElement("div");
     btns.className = "answerButtons";
 
     const btnA = document.createElement("button");
-    btnA.className = "btn-ghost";
+    btnA.className = "btn";
     btnA.textContent = "A";
+    btnA.style = ans.awardedTo == "A" ? 'border: 5px solid #000; background: color-mix(in srgb, var(--btn) 50%, #000);' : '';
     btnA.onclick = () => ws.send(JSON.stringify({ type: "assignPoints", index: i, team: "A" }));
 
     const btnB = document.createElement("button");
-    btnB.className = "btn-ghost";
+    btnB.className = "btn";
     btnB.textContent = "B";
+    btnB.style = ans.awardedTo == "B" ? 'border: 5px solid #000; background: color-mix(in srgb, var(--btn) 50%, #000);' : '';
     btnB.onclick = () => ws.send(JSON.stringify({ type: "assignPoints", index: i, team: "B" }));
-
-    const btnReveal = document.createElement("button");
-    btnReveal.className = "btn-ghost";
-    btnReveal.textContent = _("reveal");
-    btnReveal.onclick = () => ws.send(JSON.stringify({ type: "revealAnswer", index: i }));
 
     btns.appendChild(btnA);
     btns.appendChild(btnB);
-    btns.appendChild(btnReveal);
 
     row.appendChild(text);
-    row.appendChild(small);
     row.appendChild(btns);
 
     answersList.appendChild(row);
@@ -124,17 +117,18 @@ ws.onmessage = (ev: MessageEvent) => {
   const msg = JSON.parse(ev.data) as { type: string; state: GameState };
   console.log({ msg });
   const state = msg.state;
-  let _ = (k: string) => t(k, state.lang);
-  questionBox.textContent = state.question + (state.questionRevealed ? "" : `  (${_("hidden")})`);
+  const _ = (k: string) => t(k, state.lang);
+  const round = state.rounds[state.questionIndex];
+  questionBox.textContent = round.question + (round.questionRevealed ? "" : `  (${_("hidden")})`);
   renderAnswers(state);
   scoreAEl.textContent = String(state.scoreA);
   scoreBEl.textContent = String(state.scoreB);
   strikesAEl.innerHTML = "";
-  for (let i = 0; i < Math.min(3, state.strikesA); i++) {
+  for (let i = 0; i < Math.min(3, round.strikesA); i++) {
     const d = document.createElement("div"); d.className = "x"; d.textContent = "X"; strikesAEl.appendChild(d);
   }
   strikesBEl.innerHTML = "";
-  for (let i = 0; i < Math.min(3, state.strikesB); i++) {
+  for (let i = 0; i < Math.min(3, round.strikesB); i++) {
     const d = document.createElement("div"); d.className = "x"; d.textContent = "X"; strikesBEl.appendChild(d);
   }
 };

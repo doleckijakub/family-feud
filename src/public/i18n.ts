@@ -3,11 +3,11 @@ import type { Lang } from '../types.ts';
 const dictionaries: Record<Lang, Record<string, string>> = {
   en: {
     answers: "Answers",
-    awarded: "Awarded",
+    audioDisabled: "Click anything to enable audio",
     hidden: "Hidden",
     nextQuestion: "Next Question",
     prevQuestion: "Previous Question",
-    pts: "points",
+    pts: "pts",
     question: "Question",
     reveal: "Reveal",
     revealAll: "Reveal All",
@@ -23,11 +23,11 @@ const dictionaries: Record<Lang, Record<string, string>> = {
   },
   pl: {
     answers: "Odpowiedzi",
-    awarded: "Przyznano",
+    audioDisabled: "Naciśnij cokolwiek żeby włączyć dźwięk",
     hidden: "Ukryte",
     nextQuestion: "Następne Pytanie",
     prevQuestion: "Poprzednie Pytanie",
-    pts: "punktów",
+    pts: "pkt",
     question: "Pytanie",
     reveal: "Odkryj",
     revealAll: "Odkryj Wszystkie",

@@ -7,19 +7,23 @@ export interface AnswerState {
   points: number;
   revealed: boolean;
   awardedTo?: Team | null;
-}
+};
+
+export interface RoundState {
+  question: string;
+  answers: AnswerState[];
+  questionRevealed: boolean;
+  strikesA: number;
+  strikesB: number;
+};
 
 export interface GameState {
   lang: Lang,
   questionIndex: number;
   questionCount: number;
-  question: string;
-  answers: AnswerState[];
-  questionRevealed: boolean;
   nameA: string;
   nameB: string;
-  strikesA: number;
-  strikesB: number;
   scoreA: number;
   scoreB: number;
-}
+  rounds: RoundState[];
+};

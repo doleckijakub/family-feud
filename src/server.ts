@@ -3,7 +3,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import type { GameState } from './types.ts';
+import type { GameState, RoundState } from './types.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -73,22 +73,28 @@ interface Client extends WebSocket {
 
 const games: Record<string, GameState> = {};
 
-function createInitialStateForQuestion(index: number): GameState {
+function createRoundState(index: number): RoundState {
   const q = QUESTIONS[index];
+  
+  return {
+    question: q.text,
+    answers: q.answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null })),
+    questionRevealed: false,
+    strikesA: 0,
+    strikesB: 0,
+  }
+}
 
+function createInitialStateForQuestion(index: number): GameState {
   return {
     lang: "en",
     questionIndex: index,
     questionCount: QUESTIONS.length,
-    question: q.text,
-    answers: q.answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null })),
-    questionRevealed: false,
     nameA: "A",
     nameB: "B",
-    strikesA: 0,
-    strikesB: 0,
     scoreA: 0,
-    scoreB: 0
+    scoreB: 0,
+    rounds: [createRoundState(index)],
   };
 }
 
@@ -164,45 +170,60 @@ wss.on("connection", (ws: Client) => {
             state.nameB = data.newName;
             break;
           case "revealQuestion":
-            state.questionRevealed = true;
+            state.rounds[state.questionIndex].questionRevealed = true;
             break;
-          case "revealAnswer": {
-            const idx: number = Number(data.index);
-            if (Number.isFinite(idx) && idx >= 0 && idx < state.answers.length) {
-              state.answers[idx].revealed = true;
-            }
-            break;
-          }
           case "assignPoints": {
             const idx: number = Number(data.index);
             const team = data.team === "A" ? "A" : "B";
-            if (Number.isFinite(idx) && idx >= 0 && idx < state.answers.length && !state.answers[idx].awardedTo) {
-              const pts = state.answers[idx].points;
-              state.answers[idx].awardedTo = team;
-              state.answers[idx].revealed = true;
-              if (team === "A") state.scoreA += pts;
-              else state.scoreB += pts;
+            if (
+              Number.isFinite(idx)
+              && idx >= 0
+              && idx < state.rounds[state.questionIndex].answers.length
+            ) {
+              const pts = state.rounds[state.questionIndex].answers[idx].points;
+
+              if (state.rounds[state.questionIndex].answers[idx].awardedTo !== null) {
+                if (state.rounds[state.questionIndex].answers[idx].awardedTo === "A")
+                  state.scoreA -= pts;
+                else
+                  state.scoreB -= pts;
+
+                if (state.rounds[state.questionIndex].answers[idx].awardedTo === team) {
+                  state.rounds[state.questionIndex].answers[idx].awardedTo = null;
+                  state.rounds[state.questionIndex].answers[idx].revealed = false;
+                  break;
+                }
+              }
+
+              state.rounds[state.questionIndex].answers[idx].awardedTo = team;
+              state.rounds[state.questionIndex].answers[idx].revealed = true;
+
+              if (team === "A")
+                state.scoreA += pts;
+              else
+                state.scoreB += pts;
             }
             break;
           }
           case "strike": {
             const team = data.team === "A" ? "A" : "B";
-            if (team === "A") state.strikesA = Math.min(3, state.strikesA + 1);
-            else state.strikesB = Math.min(3, state.strikesB + 1);
+            if (team === "A") state.rounds[state.questionIndex].strikesA = Math.min(
+              3,
+              state.rounds[state.questionIndex].strikesA + 1
+            );
+            else state.rounds[state.questionIndex].strikesB = Math.min(
+              3,
+              state.rounds[state.questionIndex].strikesB + 1
+            );
             break;
           }
           case "revealAll":
-            state.answers.forEach(a => a.revealed = true);
+            state.rounds[state.questionIndex].answers.forEach(a => a.revealed = true);
             break;
           case "prevQuestion": {
             const nextIdx = Math.max(0, state.questionIndex - 1);
             if (nextIdx !== state.questionIndex) {
               state.questionIndex = nextIdx;
-              state.question = QUESTIONS[nextIdx].text;
-              state.answers = QUESTIONS[nextIdx].answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null }));
-              state.questionRevealed = false;
-              state.strikesA = 0;
-              state.strikesB = 0;
             }
             break;
           }
@@ -210,11 +231,9 @@ wss.on("connection", (ws: Client) => {
             const nextIdx = Math.min(QUESTIONS.length - 1, state.questionIndex + 1);
             if (nextIdx !== state.questionIndex) {
               state.questionIndex = nextIdx;
-              state.question = QUESTIONS[nextIdx].text;
-              state.answers = QUESTIONS[nextIdx].answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null }));
-              state.questionRevealed = false;
-              state.strikesA = 0;
-              state.strikesB = 0;
+              if (nextIdx >= state.rounds.length) {
+                state.rounds[state.questionIndex] = createRoundState(state.questionIndex);
+              }
             }
             break;
           }
