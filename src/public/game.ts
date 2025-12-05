@@ -1,22 +1,5 @@
-import { t } from './i18n.js';
-
-interface AnswerState {
-  text: string;
-  points: number;
-  revealed: boolean;
-  awardedTo?: "A" | "B" | null;
-}
-
-interface GameState {
-  questionIndex: number;
-  question: string;
-  answers: AnswerState[];
-  questionRevealed: boolean;
-  strikesA: number;
-  strikesB: number;
-  scoreA: number;
-  scoreB: number;
-}
+import { t } from './i18n.ts';
+import type { GameState } from '../types.ts';
 
 const gameId = window.location.pathname.split("/")[1] ?? "000";
 const ws = new WebSocket(`ws://${location.host}/ws/${gameId}/game`);
@@ -28,14 +11,18 @@ const scoreBEl = document.getElementById("scoreB") as HTMLElement;
 const xsA = document.getElementById("xsA") as HTMLElement;
 const xsB = document.getElementById("xsB") as HTMLElement;
 
-(document.getElementById("title") as HTMLElement).textContent = t("title");
-(document.getElementById("teamA") as HTMLElement).textContent = t("teamA");
-(document.getElementById("teamB") as HTMLElement).textContent = t("teamB");
-
 function renderState(state: GameState) {
+  let _ = (k: string) => t(k, state.lang);
+
   questionTop.textContent = state.questionRevealed ? state.question : "???";
+  
+  (document.getElementById("title") as HTMLElement).textContent = _("title");
+
   scoreAEl.textContent = String(state.scoreA);
   scoreBEl.textContent = String(state.scoreB);
+
+  (document.getElementById("teamA") as HTMLElement).textContent = state.nameA;
+  (document.getElementById("teamB") as HTMLElement).textContent = state.nameB;
 
   xsA.innerHTML = "";
   for (let i = 0; i < Math.min(3, state.strikesA); i++) {
@@ -67,6 +54,9 @@ function renderState(state: GameState) {
 
 ws.onmessage = (ev: MessageEvent) => {
   const msg = JSON.parse(ev.data) as { type: string; state: GameState };
+  
+  console.log({ msg });
+
   if (msg.type === "init" || msg.type === "update") {
     renderState(msg.state);
   }

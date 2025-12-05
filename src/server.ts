@@ -3,6 +3,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import type { GameState } from './types.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -11,12 +12,15 @@ const PORT = 3000;
 app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/:id/host", (_, res) =>
+app.get("/:id/host", (req, res) => {
+  console.log("GET " + req.url);
   res.sendFile(path.join(__dirname, "../src/public/host.html"))
-);
-app.get("/:id/game", (_, res) =>
+});
+
+app.get("/:id/game", (req, res) => {
+  console.log("GET " + req.url);
   res.sendFile(path.join(__dirname, "../src/public/game.html"))
-);
+});
 
 type QuestionFileBlock = {
   text: string;
@@ -56,24 +60,10 @@ function parseQuestionsFile(filepath: string): QuestionFileBlock[] {
 const QUESTIONS = parseQuestionsFile(path.join(__dirname, "questions.txt"));
 if (!QUESTIONS.length) {
   console.warn("No questions loaded from src/questions.txt. Please add questions.");
-}
-
-interface AnswerState {
-  text: string;
-  points: number;
-  revealed: boolean;
-  awardedTo?: "A" | "B" | null;
-}
-
-interface GameState {
-  questionIndex: number;
-  question: string;
-  answers: AnswerState[];
-  questionRevealed: boolean;
-  strikesA: number;
-  strikesB: number;
-  scoreA: number;
-  scoreB: number;
+} else {
+  for (let i = 0; i < QUESTIONS.length; i++) {
+    console.log(`Q${i + 1}: ${QUESTIONS[i].text}`);
+  }
 }
 
 interface Client extends WebSocket {
@@ -85,11 +75,16 @@ const games: Record<string, GameState> = {};
 
 function createInitialStateForQuestion(index: number): GameState {
   const q = QUESTIONS[index];
+
   return {
+    lang: "en",
     questionIndex: index,
+    questionCount: QUESTIONS.length,
     question: q.text,
     answers: q.answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null })),
     questionRevealed: false,
+    nameA: "A",
+    nameB: "B",
     strikesA: 0,
     strikesB: 0,
     scoreA: 0,
@@ -114,6 +109,7 @@ server.on("upgrade", (req, socket, head) => {
     const [, prefix, gameId, role] = url.pathname.split("/");
 
     if (prefix !== "ws" || !gameId || (role !== "host" && role !== "game")) {
+      console.warn("invalid ws attempt at " + url.pathname);
       socket.destroy();
       return;
     }
@@ -122,6 +118,7 @@ server.on("upgrade", (req, socket, head) => {
       const ws = wsRaw as Client;
       ws.gameId = gameId;
       ws.role = role as "host" | "game";
+      console.log(`upgrade ws#${ws.gameId}@${ws.role}`);
       ensureGame(gameId);
       ws.send(JSON.stringify({ type: "init", state: games[gameId] }));
       wss.emit("connection", ws);
@@ -145,7 +142,10 @@ function broadcast(gameId: string) {
 
 wss.on("connection", (ws: Client) => {
   console.log(`connected ws#${ws.gameId}@${ws.role}`);
+
   ws.on("message", (raw) => {
+    console.log(String(raw));
+
     try {
       const data = JSON.parse(raw.toString());
       const gameId = ws.gameId!;
@@ -154,6 +154,15 @@ wss.on("connection", (ws: Client) => {
 
       if (ws.role === "host") {
         switch (data.type) {
+          case "setLang":
+            state.lang = data.lang;
+            break;
+          case "renameA":
+            state.nameA = data.newName;
+            break;
+          case "renameB":
+            state.nameB = data.newName;
+            break;
           case "revealQuestion":
             state.questionRevealed = true;
             break;
@@ -185,6 +194,18 @@ wss.on("connection", (ws: Client) => {
           case "revealAll":
             state.answers.forEach(a => a.revealed = true);
             break;
+          case "prevQuestion": {
+            const nextIdx = Math.max(0, state.questionIndex - 1);
+            if (nextIdx !== state.questionIndex) {
+              state.questionIndex = nextIdx;
+              state.question = QUESTIONS[nextIdx].text;
+              state.answers = QUESTIONS[nextIdx].answers.map(a => ({ text: a.text, points: a.points, revealed: false, awardedTo: null }));
+              state.questionRevealed = false;
+              state.strikesA = 0;
+              state.strikesB = 0;
+            }
+            break;
+          }
           case "nextQuestion": {
             const nextIdx = Math.min(QUESTIONS.length - 1, state.questionIndex + 1);
             if (nextIdx !== state.questionIndex) {

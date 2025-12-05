@@ -19,8 +19,10 @@
     }
     html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg,var(--bg), #052036 80%); color:var(--text);}
     .container{max-width:1100px;margin:18px auto;padding:20px;background: linear-gradient(180deg, rgba(255,255,255,0.03), transparent); border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    header{display:flex;align-items:center;gap:16px;}
+    header{display:flex;align-items:center;justify-content:space-between;}
     header h1{margin:0;font-size:28px;letter-spacing:1px;}
+    header #langSelect{position:relative;right:0;display:flex;flex-direction:row;}
+    #langSelect img{width:30px;padding:10px;}
     .topbar{display:flex;gap:12px;align-items:center;margin-top:12px;}
     .btn{background:var(--accent);color:#112; border:none;padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 6px 10px rgba(0,0,0,0.35);}
     .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);padding:8px 12px;border-radius:8px;cursor:pointer;}
@@ -34,7 +36,7 @@
     .small{font-size:13px;color:var(--muted);}
     .scoreBox{background:linear-gradient(180deg,#06304a,#041a2a);padding:12px;border-radius:8px;text-align:center;}
     .scoreLarge{font-size:28px;font-weight:800;color:var(--accent);}
-    .strikes{display:flex;flex-direction:column;gap:6px;align-items:center;margin-top:8px;}
+    .strikes{display:flex;flex-direction:row;gap:6px;align-items:center;margin-top:8px;justify-content:center;}
     .x{background:var(--red);color:#fff;padding:6px 10px;border-radius:6px;font-weight:700;box-shadow:0 6px 10px rgba(0,0,0,0.35);}
     .answerButtons{display:flex;gap:6px;}
     footer{margin-top:18px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:13px;}
@@ -46,20 +48,26 @@
   <div class="container">
     <header>
       <h1 id="title"></h1>
+      <div id="langSelect"></div>
     </header>
 
     <div class="topbar">
+      <h3>
+        <span id="questionHeader"></span>&nbsp;<span id="questionIndex"></span>/<span id="questionCount"></span>&nbsp;&nbsp;&nbsp;
+      </h3>
       <button id="revealQuestion" class="btn"></button>
       <button id="revealAll" class="btn"></button>
+      <button id="prevQuestion" class="btn"></button>
       <button id="nextQuestion" class="btn"></button>
     </div>
 
+    <div class="questionBox" id="questionBox"></div>
+
     <div class="layout">
       <div class="panel">
-        <div class="questionBox" id="questionBox"></div>
         <div class="controls">
           <div class="scoreBox" style="flex:1;">
-            <div class="small" id="teamA"></div>
+            <input type="text" id="nameA" />
             <div class="scoreLarge" id="scoreA">0</div>
             <div class="small strikes"></div>
             <div class="strikes" id="strikesA"></div>
@@ -75,7 +83,7 @@
 
       <div class="panel">
         <div class="scoreBox">
-          <div class="small" id="teamB"></div>
+          <input type="text" id="nameB" />
           <div class="scoreLarge" id="scoreB">0</div>
           <div class="small strikes"></div>
           <div class="strikes" id="strikesB"></div>

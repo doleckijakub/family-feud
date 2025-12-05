@@ -1,46 +1,48 @@
-type Lang = "en" | "pl";
+import type { Lang } from '../types.ts';
 
 const dictionaries: Record<Lang, Record<string, string>> = {
   en: {
-    title: "Family Feud",
-    revealQuestion: "Reveal Question",
-    teamA: "Team A",
-    teamB: "Team B",
-    strikes: "Strikes",
-    revealAll: "Reveal All",
-    nextQuestion: "Next Question",
     answers: "Answers",
-    strikeA: "Strike A",
-    strikeB: "Strike B",
+    awarded: "Awarded",
+    hidden: "Hidden",
+    nextQuestion: "Next Question",
+    prevQuestion: "Previous Question",
+    pts: "points",
+    question: "Question",
+    reveal: "Reveal",
+    revealAll: "Reveal All",
+    revealQuestion: "Reveal Question",
     scoreA: "Score A",
     scoreB: "Score B",
-    hidden: "Hidden",
+    strikeA: "Strike A",
+    strikeB: "Strike B",
+    strikes: "Strikes",
+    teamA: "Team A",
+    teamB: "Team B",
+    title: "Family Feud",
   },
   pl: {
-    title: "Familiada",
-    revealQuestion: "Odkryj Pytanie",
-    teamA: "Drużyna A",
-    teamB: "Drużyna B",
-    strikes: "Błędy",
-    revealAll: "Odkryj Wszystkie",
-    nextQuestion: "Następne Pytanie",
     answers: "Odpowiedzi",
-    strikeA: "Błąd dla A",
-    strikeB: "Błąd dla B",
+    awarded: "Przyznano",
+    hidden: "Ukryte",
+    nextQuestion: "Następne Pytanie",
+    prevQuestion: "Poprzednie Pytanie",
+    pts: "punktów",
+    question: "Pytanie",
+    reveal: "Odkryj",
+    revealAll: "Odkryj Wszystkie",
+    revealQuestion: "Odkryj Pytanie",
     scoreA: "Punkty A",
     scoreB: "Punkty B",
-    hidden: "Ukryte",
+    strikeA: "Błąd dla A",
+    strikeB: "Błąd dla B",
+    strikes: "Błędy",
+    teamA: "Drużyna A",
+    teamB: "Drużyna B",
+    title: "Familiada",
   }
 };
 
-export function getLang(): Lang {
-  const url = new URL(window.location.href);
-  const l = url.searchParams.get("lang");
-  if (l === "pl") return "pl";
-  return "en";
-}
-
-export function t(key: string): string {
-  const lang = getLang();
+export function t(key: string, lang: Lang): string {
   return dictionaries[lang][key] ?? key;
 }
